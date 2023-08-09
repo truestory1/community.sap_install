@@ -111,21 +111,19 @@
 - name: SAP VM Preconfigure - confirm Microsoft Azure Virtual Machine
   when: sap_vm_platform == cloud_msazure_vm
   block:
+    - name: (Azure) Get instance metadata
+      ansible.builtin.uri:
+        headers:
+          Metadata: true
+        method: GET
+        url: http://169.254.169.254/metadata/instance/compute?api-version=2021-10-01
+      register: detect_cloud_provider_azure_instance_metadata
+      changed_when: false
+      ignore_errors: true
 
-  - name: (Azure) Get instance metadata
-    ansible.builtin.uri:
-      headers:
-        Metadata: true
-      method: GET
-      url: http://169.254.169.254/metadata/instance/compute?api-version=2021-10-01
-    register: detect_cloud_provider_azure_instance_metadata
-    changed_when: false
-    ignore_errors: true
-
-  - name: (Azure) Fail if cannot reach Instance Metadata Service
-    ansible.builtin.fail:
-      msg: Detected MS Azure, but could not confirm with the Instance Metadata Service
-    when:
-      - detect_cloud_provider_azure_instance_metadata.json.azEnvironment is not defined
-      - detect_cloud_provider_azure_instance_metadata.json.azEnvironment != "AzurePublicCloud"
-
+    - name: (Azure) Fail if cannot reach Instance Metadata Service
+      ansible.builtin.fail:
+        msg: Detected MS Azure, but could not confirm with the Instance Metadata Service
+      when:
+        - detect_cloud_provider_azure_instance_metadata.json.azEnvironment is not defined
+        - detect_cloud_provider_azure_instance_metadata.json.azEnvironment != "AzurePublicCloud"
